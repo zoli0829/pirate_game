@@ -8,16 +8,12 @@ using UnityEngine.UI;
 public class Door : Interactable
 {
     [SerializeField] private string levelToLoadString;
-    private Scene sceneToLoad;
-
-    private void Start()
-    {
-        sceneToLoad = SceneManager.GetSceneByName(levelToLoadString);
-    }
+    [SerializeField] private string levelToUnloadString;
+    [SerializeField] private string whereToSpawn;
 
     public override void Interact()
     {
-        LoadLevel(levelToLoadString);
+        LoadLevel(levelToLoadString, levelToUnloadString);
     }
 
     public override void ShowPrompt(bool show)
@@ -25,10 +21,9 @@ public class Door : Interactable
         base.ShowPrompt(show);
     }
 
-    public void LoadLevel(string levelToLoad)
+    public void LoadLevel(string levelToLoad, string levelToUnload)
     {
-        PlayerUIManager.Instance.loadingScreen.SetActive(true);
-
-        StartCoroutine(SceneLoader.Instance.LoadSceneAsyncAdditively(levelToLoad, scene => sceneToLoad = scene));
+        GameManager.Instance.LoadSceneAdditivelyAndRemovePreviousScene(levelToLoad, levelToUnload);
+        ShowPrompt(false);
     }
 }

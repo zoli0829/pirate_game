@@ -25,9 +25,6 @@ public class PlayerUIManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
-
-        DontDestroyOnLoad(gameObject);
-        FindUIElements();
     }
 
     private void Start()
@@ -35,14 +32,5 @@ public class PlayerUIManager : MonoBehaviour
         // SETTING THEM INACTIVE
         interactionPrompt.SetActive(false);
         loadingScreen.SetActive(false);
-    }
-
-    private void FindUIElements()
-    {
-        // FINDING AND CACHING THESE ELEMENTS
-        interactionPrompt = GameObject.Find("Interaction Prompt");
-        interactionText = GameObject.Find("Interaction Text").GetComponent<TextMeshProUGUI>();
-        loadingScreen = GameObject.Find("LoadingScreenCanvas");
-        loadingSlider = GameObject.Find("LoadingScreenSlider").GetComponent<Slider>();
     }
 }

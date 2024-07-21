@@ -1,23 +1,37 @@
 using System.Collections;
-using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class MainMenuManager : MonoBehaviour
 {
-    [SerializeField] private string testTownSceneName = "test_town";
+    // SINGLETON INSTANCE
+    public static MainMenuManager Instance { get; private set; }
 
-    private Scene bootstrapperScene;
-    private Scene mainMenuScene;
-    private Scene townScene;
-    private Scene merchantScene;
-    private Scene governorScene;
-    private Scene tavernScene;
-    private Scene shipwrightScene;
-    private Scene testTownScene;
+    [SerializeField] private Button newGameButton;
+    [SerializeField] private Button loadGameButton;
+    [SerializeField] private Button exitGameButton;
 
-    public void LoadNewGame()
+    private void Awake()
     {
-        StartCoroutine(SceneLoader.Instance.LoadSceneAsyncAdditively(testTownSceneName, scene => testTownScene = scene));
+        if (Instance == null)
+            Instance = this;
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    private void Start()
+    {
+        // ENSURE GAMEMANAGER INSTANCE IS AVAILABLE
+        if (GameManager.Instance == null)
+        {
+            Debug.LogError("GameManager instance not found!");
+            return;
+        }
+
+        newGameButton.onClick.AddListener(GameManager.Instance.StartNewGame);
     }
 }
