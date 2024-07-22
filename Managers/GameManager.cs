@@ -1,6 +1,7 @@
 
 using StarterAssets;
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -12,7 +13,14 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance {  get; private set; }
 
-    [Header("Scenes")]
+    [Header("Player Rig Prefab")]
+    [SerializeField] private GameObject playerRig;
+
+    [Header("Current and Previous Scene Names")]
+    [SerializeField] private string currentActiveSceneName;
+    [SerializeField] private string previousActiveSceneName;
+
+    [Header("Supporting Scenes")]
     //[SerializeField] private string bootstrapperSceneName = "000_bootstrapper";
     [SerializeField] private string mainMenuSceneName = "001_main_menu";
     //[SerializeField] private string townSceneName = "002_town";
@@ -29,10 +37,13 @@ public class GameManager : MonoBehaviour
     [Header("Supporting Game Objects")]
     //ADDED A CAMERA SO IT WONT DISPLAY NO CAMERAS ACTIVE
     [SerializeField] private GameObject bootstrapperCamera;
+
+    [Header("Spawn Points")]
+    public Vector3 currentSpawnPoint;
     public Vector3 tavernSpawnPoint;
     public Vector3 merchantSpawnPoint;
     public Vector3 shipwrightSpawnPoint;
-    public Vector3 townhallSpawnPoint;
+    public Vector3 governorSpawnPoint;
     public Vector3 dockSpawnPoint;
     public Vector3 indoorSpawnPoint;
 
@@ -68,8 +79,10 @@ public class GameManager : MonoBehaviour
     // USE THIS METHOD WHEN ENTERING OR LEAVING TAVERNS MERCHANTS ETC
     public void LoadSceneAdditivelyAndRemovePreviousScene(string sceneToLoad, string sceneToUnload)
     {
+        // SET THE SCENE NAMES
+        SetSceneNames(sceneToLoad);
+
         // SCENE TO UNLOAD
-        // FIRST I NEED TO UNLOAD THE SCENE OTHERWISE IT INSTANTIATES A 2ND PLAYER RIG AND MESSESS UP THE CONTROLS
         UnloadScene(sceneToUnload);
 
         // SCENE TO LOAD
@@ -85,7 +98,6 @@ public class GameManager : MonoBehaviour
 
         // START LOADING THE SCENE
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
-
         // WAIT UNTIL THE ASYNC SCENE FULLY LOADS, MEANWHILE UPDATE THE LOADING BAR
         while (!asyncLoad.isDone)
         {
@@ -93,15 +105,13 @@ public class GameManager : MonoBehaviour
             loadingSlider.value = progressValue;
             yield return null;
         }
+        // START THE AUDIO PLAYER
+        PlayMusicAccordingToScene();
 
-        // SET THE SPAWN POINTS
+        // FIND AND SET THE SPAWN POINTS
         FindSpawnPointsInTheScene();
+        SetSpawnPoint();
 
-        // GET THE PLAYER
-        FindPlayer();
-
-        // SETTING THE LOADING SCREEN CANVAS INACTIVE
-        loadingScreen.SetActive(false);
         // DEACTIVATING THE CAMERA
         bootstrapperCamera.SetActive(false);
 
@@ -111,11 +121,23 @@ public class GameManager : MonoBehaviour
         // SETTING IT AS THE ACTIVE SCENE
         SceneManager.SetActiveScene(sceneToSetActive);
 
+        // INSTANTIATING THE PLAYER AT THE SPAWN POINT
+        InstantiatePlayer();
+
+        // GET THE PLAYER
+        FindPlayer();
+     
+        // SETTING THE LOADING SCREEN CANVAS INACTIVE
+        loadingScreen.SetActive(false);
+
         if (bootstrapperCamera.activeSelf)
         {
             // DISABLE THE SUPPORT CAMERA
             bootstrapperCamera.SetActive(false);
         }
+
+        // UPDATE THE CURRENT ACTIVE SCENE NAME
+        currentActiveSceneName = sceneName;
     }
 
     public void StartNewGame()
@@ -144,9 +166,9 @@ public class GameManager : MonoBehaviour
         if (foundShipwrightSpawnPoint != null)
             shipwrightSpawnPoint = foundShipwrightSpawnPoint.transform.position;
 
-        TownhallSpawnPoint foundTownhallSpawnPoint = FindFirstObjectByType<TownhallSpawnPoint>();
-        if (foundTownhallSpawnPoint != null)
-            townhallSpawnPoint = foundTownhallSpawnPoint.transform.position;
+        TownhallSpawnPoint foundGovernorSpawnPoint = FindFirstObjectByType<TownhallSpawnPoint>();
+        if (foundGovernorSpawnPoint != null)
+            governorSpawnPoint = foundGovernorSpawnPoint.transform.position;
 
         DockSpawnPoint foundDockSpawnPoint = FindFirstObjectByType<DockSpawnPoint>();
         if (foundDockSpawnPoint != null)
@@ -157,11 +179,119 @@ public class GameManager : MonoBehaviour
             indoorSpawnPoint = foundIndoorSpawnPoint.transform.position;
     }
 
+    private void SetSpawnPoint()
+    {
+        // GET ACTIVE SCENE
+        Scene activeScene = SceneManager.GetActiveScene();
+
+        // ALWAYS SPAWN AT THE DOCKS, ONLY SPAWN SOMEWHERE ELSE WHEN WE EXIT SHOPS
+        if (dockSpawnPoint != null)
+        {
+            currentSpawnPoint = dockSpawnPoint;
+        }
+
+        // IF WE ARE IN AN INDOOR SCENE, SET THE SPAWN POINT TO THE INDOOR SPAWN POINT
+        if (currentActiveSceneName == null) return;
+
+        if (currentActiveSceneName.Contains("merchant")
+            || currentActiveSceneName.Contains("tavern")
+            || currentActiveSceneName.Contains("shipwright")
+            || currentActiveSceneName.Contains("governor"))
+        {
+            currentSpawnPoint = indoorSpawnPoint;
+        }
+
+        if (previousActiveSceneName == null) return;
+
+        if(previousActiveSceneName.Contains("merchant"))
+        {
+            currentSpawnPoint = merchantSpawnPoint;
+        }
+        else if (previousActiveSceneName.Contains("tavern"))
+        {
+            currentSpawnPoint = tavernSpawnPoint;
+        }
+        else if(previousActiveSceneName.Contains("shipwright"))
+        {
+            currentSpawnPoint = shipwrightSpawnPoint;
+        }
+        else if(previousActiveSceneName.Contains("governor"))
+        {
+            currentSpawnPoint = governorSpawnPoint;
+        }
+        else
+        {
+            Debug.Log("PREVIOUS ACTIVE SCENE WAS " + previousActiveSceneName + " AND THE CURRENT SPAWN POINT IS " + currentSpawnPoint);
+        }
+    }
+
     public void FindPlayer() 
     {
         ThirdPersonController foundPlayer = FindFirstObjectByType<ThirdPersonController>();
         if (foundPlayer != null)
             player = foundPlayer;
+    }
+
+    public void InstantiatePlayer()
+    {
+        if (currentSpawnPoint == null) return;
+
+        if (player == null)
+        {
+            Instantiate(playerRig, currentSpawnPoint, Quaternion.identity);
+        }
+        else
+        {
+            Debug.LogError("THERE IS ANOTHER PLAYER IN THE SCENE");
+        }
+    }
+
+    // SAVE THE CURRENT AND PREVIOUS ACTIVE SCENES
+    private void SetSceneNames(string newSceneName)
+    {
+        previousActiveSceneName = currentActiveSceneName;
+        currentActiveSceneName = newSceneName;
+    }
+
+    private void PlayMusicAccordingToScene()
+    {
+        if(currentActiveSceneName == null) return;
+
+        if(currentActiveSceneName.ToLower().Contains("main_menu"))
+        {
+            if(AudioManager.Instance.isTavernAudioManagerActive)
+                AudioManager.Instance.DisableTavernAudioManager();
+
+            AudioManager.Instance.PlayMainMenuMusic();
+        }
+        else if(currentActiveSceneName.ToLower().Contains("tavern"))
+        {
+            AudioManager.Instance.FadeOutAndStop(1);
+            AudioManager.Instance.EnableTavernAudioManager();
+        }
+        else if(currentActiveSceneName.ToLower().Contains("shipwright"))
+        {
+            // TO DO: GET MUSIC FOR THE SHIPWRIGHT SCENE
+        }
+        else if(currentActiveSceneName.ToLower().Contains("merchant"))
+        {
+            // TO DO: GET MUSIC FOR THE MERCHANT SCENE
+        }
+        else if(currentActiveSceneName.ToLower().Contains("governor"))
+        {
+            // TO DO: GET MUSIC FOR THE GOVERNOR SCENE
+        }
+        else if (currentActiveSceneName.ToLower().Contains("town"))
+        {
+            if (AudioManager.Instance.isTavernAudioManagerActive)
+                AudioManager.Instance.DisableTavernAudioManager();
+
+            // PLAY TOWN MUSIC
+        }
+        else
+        {
+            // TO DO: COME UP WITH A DEFAULT MUSIC 
+        }
     }
 
     public void ExitGame()
