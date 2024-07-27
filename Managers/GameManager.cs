@@ -287,6 +287,8 @@ public class GameManager : MonoBehaviour
                 AudioManager.Instance.DisableTavernAudioManager();
 
             // PLAY TOWN MUSIC
+            // FOR NOW JUST DONT PLAY ANY MUSIC
+            AudioManager.Instance.FadeOutAndStop(1);
         }
         else
         {
