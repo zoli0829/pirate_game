@@ -121,11 +121,14 @@ public class GameManager : MonoBehaviour
         // SETTING IT AS THE ACTIVE SCENE
         SceneManager.SetActiveScene(sceneToSetActive);
 
-        // INSTANTIATING THE PLAYER AT THE SPAWN POINT
-        InstantiatePlayer();
+        // INSTANTIATING THE PLAYER AT THE SPAWN POINT IF ITS NOT THE MAIN MENU
+        if(sceneName != "001_main_menu")
+        {
+            InstantiatePlayer();
 
-        // GET THE PLAYER
-        FindPlayer();
+            // GET THE PLAYER
+            FindPlayer();
+        }
      
         // SETTING THE LOADING SCREEN CANVAS INACTIVE
         loadingScreen.SetActive(false);
@@ -253,6 +256,7 @@ public class GameManager : MonoBehaviour
         currentActiveSceneName = newSceneName;
     }
 
+    // DONT KNOW IF I SHOULD MOVE IT TO THE AUDIO MANAGER OR LEAVE IT HERE
     private void PlayMusicAccordingToScene()
     {
         if(currentActiveSceneName == null) return;
