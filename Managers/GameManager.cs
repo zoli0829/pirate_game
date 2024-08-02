@@ -224,7 +224,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("PREVIOUS ACTIVE SCENE WAS " + previousActiveSceneName + " AND THE CURRENT SPAWN POINT IS " + currentSpawnPoint);
+            currentSpawnPoint = dockSpawnPoint;
         }
     }
 
