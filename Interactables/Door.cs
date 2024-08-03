@@ -13,6 +13,7 @@ public class Door : Interactable
 
     public override void Interact()
     {
+        GameManager.Instance.SetLoadingScreenActive(true);
         LoadLevel(levelToLoadString, levelToUnloadString);
     }
 

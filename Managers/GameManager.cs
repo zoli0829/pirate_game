@@ -92,7 +92,9 @@ public class GameManager : MonoBehaviour
     private IEnumerator LoadSceneAdditiveAsyncCoroutine(string sceneName)
     {
         // SETTING THE LOADING SCREEN CANVAS ACTIVE
-        loadingScreen.SetActive(true);
+        if(loadingScreen.activeInHierarchy == false)
+            SetLoadingScreenActive(true);
+
         //SETTING THE CAMERA TO ACTIVE FOR THE LOADING SCREEN TO NOT BUG OUT
         bootstrapperCamera.SetActive(true);
 
@@ -129,9 +131,10 @@ public class GameManager : MonoBehaviour
             // GET THE PLAYER
             FindPlayer();
         }
-     
+
         // SETTING THE LOADING SCREEN CANVAS INACTIVE
-        loadingScreen.SetActive(false);
+        if(loadingScreen.activeInHierarchy == true)
+            SetLoadingScreenActive(false);
 
         if (bootstrapperCamera.activeSelf)
         {
@@ -151,7 +154,15 @@ public class GameManager : MonoBehaviour
 
     public void UnloadScene(string sceneToUnload)
     {
-        SceneManager.UnloadSceneAsync(sceneToUnload);
+        if (SceneManager.GetSceneByName(sceneToUnload).isLoaded)
+        {
+            Debug.Log("Unloading scene: " + sceneToUnload);
+            SceneManager.UnloadSceneAsync(sceneToUnload);
+        }
+        else
+        {
+            Debug.LogError("Scene to unload is not loaded or does not exist: " + sceneToUnload);
+        }
     }
 
     // TRIES TO FIND THE SPAWN POINTS IN THE SCENE IF THERE ARE ANY IF THERE ARENT THEN IT USES THE PREVIOUSLY SAVED ONES
@@ -224,7 +235,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            currentSpawnPoint = dockSpawnPoint;
+            //currentSpawnPoint = dockSpawnPoint; DONT DO THIS I SPENT AN HOUR DEBUGGING WHY MY SPAWNS DONT WORK CORRECTLY
         }
     }
 
@@ -298,6 +309,11 @@ public class GameManager : MonoBehaviour
         {
             // TO DO: COME UP WITH A DEFAULT MUSIC 
         }
+    }
+
+    public void SetLoadingScreenActive(bool setActive)
+    {
+        loadingScreen.SetActive(setActive);
     }
 
     public void ExitGame()
